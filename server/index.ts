@@ -163,7 +163,7 @@ app.post("/api/reports", (req, res) => {
 });
 
 // ─── Serve static files in production ───
-const clientDist = path.join(__dirname, "..", "dist", "client");
+const clientDist = path.join(__dirname, "..", "client");
 app.use(express.static(clientDist));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(clientDist, "index.html"));
