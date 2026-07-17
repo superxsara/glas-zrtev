@@ -8,6 +8,7 @@ import { Tabs } from "./lib/quanta-shims";
 import { Textarea } from "./lib/quanta-shims";
 import { Typography } from "./lib/quanta-shims";
 import { Toaster, toast } from "./lib/quanta-shims";
+import { VisualSummarySection } from "./components/visual-summary";
 import {
   ShieldAlert,
   MessageSquareWarning,
@@ -1243,25 +1244,32 @@ export function AppDetailTemplate() {
         </header>
 
         {/* Tabs */}
-        <div
-          variant="segmented"
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(String(v))}
-          className="flex! min-h-0 w-full flex-col gap-5"
-        >
-          <Tabs.List
-            className="self-start"
-            items={[
+        <div className="flex! min-h-0 w-full flex-col gap-5">
+          <div className="flex flex-wrap gap-2 self-start rounded-xl bg-neutral-900 p-1">
+            {[
               { value: "dashboard", label: "Nadzorna plošča", start: <Icon size="sm" as={BarChart3} /> },
               { value: "submit", label: "Prijavi", start: <Icon size="sm" as={Send} /> },
               { value: "categories", label: "Kategorije", start: <Icon size="sm" as={Info} /> },
               { value: "analytics", label: "Analitika", start: <Icon size="sm" as={BarChart3} /> },
               { value: "visual", label: "Vizualni povzetki", start: <Icon size="sm" as={Megaphone} /> },
-            ]}
-          />
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeTab === tab.value ? "bg-[#c0392b] text-white" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                {tab.start}
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
           {/* ─── Dashboard Tab ─── */}
-          <div value="dashboard" className="flex flex-col gap-4 pt-0">
+          {activeTab === "dashboard" && (
+          <div className="flex flex-col gap-4 pt-0">
             {/* Hero — daily counter from 0 */}
             <Hero stats={statsData} isPending={stats.isPending} />
 
@@ -1292,24 +1300,36 @@ export function AppDetailTemplate() {
             {/* Weekly card */}
             <WeeklyCard />
           </div>
+          )}
 
           {/* ─── Submit Tab ─── */}
-          <div value="submit" className="pt-0">
+          {activeTab === "submit" && (
+          <div className="pt-0">
             <ReportForm onSubmitted={() => setActiveTab("dashboard")} />
           </div>
+          )}
 
           {/* ─── Categories Tab ─── */}
-          <div value="categories" className="pt-0">
+          {activeTab === "categories" && (
+          <div className="pt-0">
             <CategoryLegend />
           </div>
+          )}
 
           {/* ─── Analytics Tab ─── */}
-          <div value="analytics" className="pt-0">
+          {activeTab === "analytics" && (
+          <div className="pt-0">
             <AnalyticsPanel />
           </div>
+          )}
 
           {/* ─── Visual Tab ─── */}
-                  </div>
+          {activeTab === "visual" && (
+          <div className="pt-0">
+            <VisualSummarySection />
+          </div>
+          )}
+        </div>
 
         {/* Footer */}
         <footer className="flex items-center justify-center gap-2 py-6 text-center">
@@ -1322,4 +1342,5 @@ export function AppDetailTemplate() {
     </div>
   );
 }
+
 export default AppDetailTemplate;
