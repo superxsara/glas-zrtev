@@ -134,6 +134,31 @@ function AnimatedCounter({ target, duration = 2000 }: { target: number; duration
 
 // ─── Hero ───
 
+// ─── Sliding Ticker ───
+function SlidingTicker({ reports }: { reports: RecentReport[] }) {
+  const items = reports.length > 0
+    ? reports.slice(0, 12)
+    : [{ id: "placeholder", anonymized_text: "Bodite prvi, ki delite svojo izkušnjo — vaša prijava se prikaže tukaj, v živo.", category: "info", category_label: "", category_color: "#737373", platform: "", created_at: "" }];
+  const loop = [...items, ...items];
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-q-400 border border-q-border-subtle bg-q-background-secondary py-3">
+      <div className="gz-ticker-track flex w-max gap-8">
+        {loop.map((r, i) => (
+          <span key={`${r.id}-${i}`} className="flex shrink-0 items-center gap-2 whitespace-nowrap px-2 text-q-body-sm-regular text-q-text-secondary">
+            {r.category_label && (
+              <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ color: r.category_color, backgroundColor: `${r.category_color}22` }}>
+                {r.category_label}
+              </span>
+            )}
+            <span>{r.anonymized_text}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Hero({ stats, isPending }: { stats: DashboardStats | undefined; isPending: boolean }) {
   const todayCount = stats?.todayCount ?? 0;
   const totalYear = stats?.totalYear ?? 0;
@@ -1272,6 +1297,9 @@ export function AppDetailTemplate() {
           <div className="flex flex-col gap-4 pt-0">
             {/* Hero — daily counter from 0 */}
             <Hero stats={statsData} isPending={stats.isPending} />
+
+            {/* Sliding ticker of recent reports */}
+            {statsData && <SlidingTicker reports={statsData.recentReports} />}
 
             {/* Pyramid */}
             {statsData && <CategoryPyramid categories={statsData.categories} />}

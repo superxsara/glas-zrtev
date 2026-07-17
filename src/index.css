@@ -142,3 +142,15 @@ body {
   .gz-keyhole-bg::before { animation: none; }
   .gz-auto-scroll { animation: none; }
 }
+
+/* Sliding ticker animation */
+@keyframes gz-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.gz-ticker-track {
+  animation: gz-ticker-scroll 30s linear infinite;
+}
+.gz-ticker-track:hover {
+  animation-play-state: paused;
+}
