@@ -1322,3 +1322,4 @@ export function AppDetailTemplate() {
     </div>
   );
 }
+export default AppDetailTemplate;
