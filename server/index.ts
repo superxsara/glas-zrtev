@@ -66,12 +66,35 @@ app.get("/api/analytics", (_req, res) => {
     return labels.map(l=>({value:l.value,label:l.label,count:m.get(l.value)??0,percentage:total>0?Math.round((m.get(l.value)??0)/total*100):0}));
   }
   const gender = bd("gender",[{value:"m",label:"Moški"},{value:"f",label:"Ženska"},{value:"d",label:"Drugo"}]);
-  const ageGroup = bd("age_group",[{value:"18-24",label:"18–24"},{value:"25-34",label:"25–34"},{value:"35-44",label:"35–44"},{value:"45-54",label:"45–54"},{value:"55+",label:"55+"}]);
+  const ageGroup = bd("age_group",[{value:"do 14",label:"Do 14"},{value:"14-17",label:"14–17"},{value:"18-24",label:"18–24"},{value:"25-34",label:"25–34"},{value:"35-44",label:"35–44"},{value:"45-54",label:"45–54"},{value:"55+",label:"55+"}]);
   const cr = db.prepare("SELECT has_children, COUNT(*) as c FROM reports WHERE has_children IS NOT NULL GROUP BY has_children").all() as {has_children:number;c:number}[];
   const cm = new Map(cr.map(r=>[r.has_children,r.c]));
   const hasChildren = [{value:"da",label:"Ima otroke",count:cm.get(1)??0,percentage:total>0?Math.round((cm.get(1)??0)/total*100):0},{value:"ne",label:"Nima otrok",count:cm.get(0)??0,percentage:total>0?Math.round((cm.get(0)??0)/total*100):0}];
   const attackMotive = bd("attack_motive",[{value:"videz",label:"Videz"},{value:"narodnost",label:"Narodnost / poreklo"},{value:"spol",label:"Spol"},{value:"spolna_usmerjenost",label:"Spolna usmerjenost"},{value:"vera",label:"Vera"},{value:"politicno_stalisce",label:"Politično stališče"},{value:"osebni_spor",label:"Osebni spor"},{value:"drugo",label:"Drugo"}]);
   res.json({ gender, ageGroup, hasChildren, attackMotive, totalWithDemographics: total });
+});
+
+// ─── Children (minors) ───
+app.get("/api/children", (_req, res) => {
+  const db = getDB();
+  const brackets = [
+    { value: "do 14", label: "Do 14 let" },
+    { value: "14-17", label: "14–17 let" },
+  ];
+  const rows = db.prepare("SELECT age_group as v, COUNT(*) as c FROM reports WHERE age_group IN ('do 14','14-17') GROUP BY age_group").all() as {v:string;c:number}[];
+  const m = new Map(rows.map(r=>[r.v,r.c]));
+  const total = brackets.reduce((s,b)=>s+(m.get(b.value)??0),0);
+  const byAge = brackets.map(b=>({value:b.value,label:b.label,count:m.get(b.value)??0,percentage:total>0?Math.round((m.get(b.value)??0)/total*100):0}));
+
+  const catRows = db.prepare("SELECT category as v, COUNT(*) as c FROM reports WHERE age_group IN ('do 14','14-17') GROUP BY category").all() as {v:string;c:number}[];
+  const cm = new Map(catRows.map(r=>[r.v,r.c]));
+  const catLabels = [{value:"zaljivka",label:"Žaljivke"},{value:"sovrazni_govor",label:"Sovražni govor"},{value:"groznja",label:"Grožnje"}];
+  const byCategory = catLabels.map(c=>({value:c.value,label:c.label,count:cm.get(c.value)??0,percentage:total>0?Math.round((cm.get(c.value)??0)/total*100):0}));
+
+  const platRows = db.prepare("SELECT platform as v, COUNT(*) as c FROM reports WHERE age_group IN ('do 14','14-17') GROUP BY platform ORDER BY c DESC").all() as {v:string;c:number}[];
+  const byPlatform = platRows.map(r=>({value:r.v,label:r.v,count:r.c,percentage:total>0?Math.round(r.c/total*100):0}));
+
+  res.json({ total, byAge, byCategory, byPlatform });
 });
 
 // ─── Weekly ───

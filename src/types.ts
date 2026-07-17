@@ -9,3 +9,4 @@ export type DashboardStats = { todayCount: number; totalYear: number; totalAll: 
 export type AnalyticsBreakdown = { value: string; label: string; count: number; percentage: number; };
 export type AnalyticsData = { gender: AnalyticsBreakdown[]; ageGroup: AnalyticsBreakdown[]; hasChildren: AnalyticsBreakdown[]; attackMotive: AnalyticsBreakdown[]; totalWithDemographics: number; };
 export type WeeklySummary = { total: number; zaljivke: number; sovrazniGovor: number; groznje: number; startDate: string; endDate: string; dailyAvg: number; topPlatform: string; };
+export type ChildrenStats = { total: number; byAge: AnalyticsBreakdown[]; byCategory: AnalyticsBreakdown[]; byPlatform: AnalyticsBreakdown[]; };

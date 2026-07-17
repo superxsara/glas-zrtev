@@ -98,7 +98,7 @@ export const CATEGORIES = [
 
 export const PLATFORMS = ["X", "Facebook", "Instagram", "TikTok", "YouTube", "Drugo"] as const;
 
-export const AGE_GROUPS = ["18-24", "25-34", "35-44", "45-54", "55+"] as const;
+export const AGE_GROUPS = ["do 14", "14-17", "18-24", "25-34", "35-44", "45-54", "55+"] as const;
 
 export const GENDERS = [
   { value: "m", label: "Moški" },

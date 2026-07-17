@@ -64,7 +64,7 @@ function IconYouTube({ size = 16 }: { size?: number }) {
 }
 import { CATEGORIES, PLATFORMS, GENDERS, AGE_GROUPS, ATTACK_MOTIVES } from "./lib/anonymize";
 import type { DashboardStats, CategoryStat, MonthlyStat, RecentReport, PlatformStat, HeatmapCell, WordFreqItem } from "./lib/reports";
-import { getDashboardStats, getAnalytics, submitReport, getWeeklySummary } from "./lib/reports";
+import { getDashboardStats, getAnalytics, submitReport, getWeeklySummary, getChildrenStats } from "./lib/reports";
 
 
 const CAMPAIGN_RED = "#c0392b";
@@ -1048,7 +1048,7 @@ function ReportForm({ onSubmitted }: { onSubmitted: () => void }) {
         </div>
       </div>
 
-      <details className="rounded-q-400 border border-q-border-subtle">
+      <details open className="rounded-q-400 border border-q-border-subtle">
         <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-q-label-md-medium text-q-text-secondary list-none [&::-webkit-details-marker]:hidden">
           <Icon as={Info} size="sm" />
           Neobvezni podatki za analitiko ozadja
@@ -1214,6 +1214,49 @@ function BreakdownCard({ title, data }: { title: string; data: { label: string; 
   );
 }
 
+// ─── Children (minors) Panel ───
+function ChildrenPanel() {
+  const { data, isPending, error } = useQuery({
+    queryKey: ["children"],
+    queryFn: () => getChildrenStats(),
+  });
+
+  if (isPending) {
+    return <div className="flex items-center justify-center py-12"><Loader size="md" color="neutral" /></div>;
+  }
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <Typography as="p" variant="body-sm-regular" color="danger">Napaka pri nalaganju podatkov.</Typography>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card surface="solid" className="flex items-center gap-2 p-4">
+        <Icon as={Info} size="sm" className="text-q-text-tertiary" />
+        <Typography as="p" variant="body-sm-regular" color="secondary">
+          Skupno <strong>{data.total}</strong> prijav od mladoletnih žrtev (do 17 let). Podatki so agregirani in anonimni — nikoli ne shranjujemo identitete.
+        </Typography>
+      </Card>
+      {data.total === 0 ? (
+        <Card surface="solid" className="flex flex-col items-center gap-2 p-8 text-center">
+          <Typography as="p" variant="body-sm-regular" color="secondary">Še ni prijav od mladoletnih žrtev.</Typography>
+        </Card>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          <BreakdownCard title="Po starosti" data={data.byAge} />
+          <BreakdownCard title="Po kategoriji" data={data.byCategory} />
+          {data.byPlatform.length > 0 && <BreakdownCard title="Po platformi" data={data.byPlatform} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 // ─── Sign-in prompt ───
 
 function SignInPrompt() {
@@ -1277,6 +1320,7 @@ export function AppDetailTemplate() {
               { value: "categories", label: "Kategorije", start: <Icon size="sm" as={Info} /> },
               { value: "analytics", label: "Analitika", start: <Icon size="sm" as={BarChart3} /> },
               { value: "visual", label: "Vizualni povzetki", start: <Icon size="sm" as={Megaphone} /> },
+              { value: "otroci", label: "Otroci", start: <Icon size="sm" as={ShieldAlert} /> },
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -1355,6 +1399,13 @@ export function AppDetailTemplate() {
           {activeTab === "visual" && (
           <div className="pt-0">
             <VisualSummarySection />
+          </div>
+          )}
+
+          {/* ─── Otroci (Minors) Tab ─── */}
+          {activeTab === "otroci" && (
+          <div className="pt-0">
+            <ChildrenPanel />
           </div>
           )}
         </div>
