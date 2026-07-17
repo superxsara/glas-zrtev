@@ -1,9 +1,12 @@
 import Database from "better-sqlite3";
-import { join, dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { mkdirSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "..", "data", "glaszrtev.db");
+const dataDir = join(__dirname, "..", "data");
+mkdirSync(dataDir, { recursive: true });
+const DB_PATH = join(dataDir, "glaszrtev.db");
 
 let _db: Database.Database | null = null;
 
@@ -11,12 +14,7 @@ export function getDB(): Database.Database {
   if (_db) return _db;
   _db = new Database(DB_PATH);
   _db.pragma("journal_mode = WAL");
-  initSchema(_db);
-  return _db;
-}
-
-function initSchema(db: Database.Database) {
-  db.exec(`
+  _db.exec(`
     CREATE TABLE IF NOT EXISTS reports (
       id TEXT PRIMARY KEY,
       anonymized_text TEXT NOT NULL,
@@ -34,4 +32,5 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
     CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
   `);
+  return _db;
 }

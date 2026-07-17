@@ -1,12 +1,70 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
-import { api } from "./lib/api";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "./lib/quanta-shims";
+import { Card } from "./lib/quanta-shims";
+import { Icon } from "./lib/quanta-shims";
+import { Loader } from "./lib/quanta-shims";
+import { Tabs } from "./lib/quanta-shims";
+import { Textarea } from "./lib/quanta-shims";
+import { Typography } from "./lib/quanta-shims";
+import { Toaster, toast } from "./lib/quanta-shims";
 import {
-  CATEGORIES, PLATFORMS, GENDERS, AGE_GROUPS, ATTACK_MOTIVES,
-} from "./lib/anonymize";
-import type {
-  DashboardStats, AnalyticsData, WeeklySummary, AnalyticsBreakdown,
-  CategoryStat, MonthlyStat, RecentReport, PlatformStat, HeatmapCell, WordFreqItem,
-} from "./types";
+  ShieldAlert,
+  MessageSquareWarning,
+  Skull,
+  BarChart3,
+  Info,
+  Lock,
+  LogIn,
+  Send,
+  Megaphone,
+  TrendingUp,
+  Clock,
+  Share2,
+  Download,
+  Sparkles,
+} from "lucide-react";
+
+// Brand SVG icons (not in lucide-react)
+function IconX({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+function IconFacebook({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+function IconInstagram({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+    </svg>
+  );
+}
+function IconTikTok({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.04-.1z" />
+    </svg>
+  );
+}
+function IconYouTube({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+import { CATEGORIES, PLATFORMS, GENDERS, AGE_GROUPS, ATTACK_MOTIVES } from "./lib/anonymize";
+import type { DashboardStats, CategoryStat, MonthlyStat, RecentReport, PlatformStat, HeatmapCell, WordFreqItem } from "./lib/reports";
+import { getDashboardStats, getAnalytics, submitReport, getWeeklySummary } from "./lib/reports";
+
 
 const CAMPAIGN_RED = "#c0392b";
 const CAMPAIGN_RED_LIGHT = "#e74c3c";
@@ -14,11 +72,21 @@ const CAMPAIGN_RED_DARK = "#922b21";
 const CAT_ZALJIVKA = "#e67e22";
 const CAT_SOVRAZNI = "#c0392b";
 const CAT_GROZNJA = "#8e44ad";
+
+const CATEGORY_ICONS: Record<string, typeof ShieldAlert> = {
+  zaljivka: MessageSquareWarning,
+  sovrazni_govor: ShieldAlert,
+  groznja: Skull,
+};
+
 const DAY_NAMES_SL = ["Pon", "Tor", "Sre", "Čet", "Pet", "Sob", "Ned"];
+
+// ─── Helpers ───
 
 function relativeTime(iso: string): string {
   const d = new Date(iso + (iso.endsWith("Z") ? "" : "Z"));
-  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  const now = Date.now();
+  const diff = Math.floor((now - d.getTime()) / 1000);
   if (diff < 60) return "zdaj";
   if (diff < 3600) return `pred ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `pred ${Math.floor(diff / 3600)} h`;
@@ -26,382 +94,808 @@ function relativeTime(iso: string): string {
   return d.toLocaleDateString("sl-SI", { day: "numeric", month: "short" });
 }
 
-function platformBadge(p: string) {
-  const m: Record<string, { l: string; b: string }> = { X: { l: "X", b: "#1d1d1d" }, Facebook: { l: "FB", b: "#1877f2" }, Instagram: { l: "IG", b: "#e1306c" }, TikTok: { l: "TT", b: "#010101" }, YouTube: { l: "YT", b: "#ff0000" } };
-  return m[p] ?? { l: p.slice(0, 2), b: "#555" };
+function platformBadge(platform: string): { label: string; bg: string } {
+  const map: Record<string, { label: string; bg: string }> = {
+    "X": { label: "X", bg: "#1d1d1d" },
+    "Facebook": { label: "FB", bg: "#1877f2" },
+    "Instagram": { label: "IG", bg: "#e1306c" },
+    "TikTok": { label: "TT", bg: "#010101" },
+    "YouTube": { label: "YT", bg: "#ff0000" },
+  };
+  return map[platform] ?? { label: platform.slice(0, 2), bg: "#555" };
 }
+
+// ─── Animated Counter (0 → target) ───
 
 function AnimatedCounter({ target, duration = 2000 }: { target: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
-  const raf = useRef<number | undefined>(undefined);
+  const rafRef = useRef<number | undefined>(undefined);
+
   useEffect(() => {
     if (target <= 0) return;
     const start = performance.now();
     const tick = (now: number) => {
-      const p = Math.min((now - start) / duration, 1);
-      setDisplay(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf.current = requestAnimationFrame(tick);
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(target * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
     };
-    raf.current = requestAnimationFrame(tick);
-    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [target, duration]);
+
   return <>{display.toLocaleString("sl-SI")}</>;
 }
 
-function Chip({ children, active, onClick }: { children: ReactNode; active: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="cursor-pointer rounded-full border px-3 py-1.5 text-xs transition-all" style={{ borderColor: active ? CAMPAIGN_RED : "#262626", backgroundColor: active ? `${CAMPAIGN_RED}15` : "transparent", color: active ? CAMPAIGN_RED : "#e5e5e5" }}>{children}</button>;
-}
+// ─── Hero ───
 
-function BreakdownCard({ title, data }: { title: string; data: AnalyticsBreakdown[] }) {
-  const max = Math.max(...data.map(d => d.count), 1);
-  return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-      <h4 className="mb-3 text-sm font-semibold text-white">{title}</h4>
-      <div className="flex flex-col gap-2">
-        {data.map(d => (
-          <div key={d.label} className="flex items-center gap-3">
-            <span className="w-28 shrink-0 text-sm text-neutral-400">{d.label}</span>
-            <div className="h-5 flex-1 overflow-hidden rounded bg-neutral-800"><div className="h-full rounded transition-all duration-500" style={{ width: `${Math.max((d.count / max) * 100, 2)}%`, backgroundColor: CAMPAIGN_RED }} /></div>
-            <span className="w-12 text-right text-sm font-medium tabular-nums text-white">{d.count}</span>
-            <span className="w-10 text-right text-xs text-neutral-500 tabular-nums">{d.percentage}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [tab, setTab] = useState("dashboard");
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-
-  const loadStats = useCallback(async () => {
-    try { setStats(await api.getDashboardStats()); }
-    finally { setStatsLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, [loadStats]);
-
-  useEffect(() => {
-    if (tab === "analytics" && !analytics) api.getAnalytics().then(setAnalytics);
-  }, [tab, analytics]);
+function Hero({ stats, isPending }: { stats: DashboardStats | undefined; isPending: boolean }) {
+  const todayCount = stats?.todayCount ?? 0;
+  const totalYear = stats?.totalYear ?? 0;
 
   return (
-    <div className="min-h-screen bg-neutral-950">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 md:px-8">
-        {/* Header */}
-        <header className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: `linear-gradient(135deg, ${CAMPAIGN_RED}, ${CAMPAIGN_RED_DARK})` }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M3 10v4a1 1 0 001 1h3l3.3 3.3a1 1 0 001.7-.7V6.4a1 1 0 00-1.7-.7L7 9H4a1 1 0 00-1 1zm10 2a3 3 0 002 2.83v2.05A5 5 0 0113 12zm2-5.66v2.06A3 3 0 0113 6a5 5 0 012-4.66z"/></svg>
-          </div>
-          <div><h1 className="text-lg font-bold text-white">#GlasŽrtev</h1><p className="text-sm text-neutral-400">Števec sovražnega govora v Sloveniji</p></div>
-        </header>
+    <section className="relative overflow-hidden rounded-q-600 border border-q-border-subtle bg-q-background-secondary p-8 md:p-12">
+      {/* Ključavnica — keyhole light rays */}
+      <div className="gz-keyhole-bg" aria-hidden />
 
-        {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto">
-          {([["dashboard","Nadzorna plošča"],["submit","Prijavi"],["categories","Kategorije"],["analytics","Analitika"]] as const).map(([v,l]) => (
-            <button key={v} onClick={() => setTab(v)} className="cursor-pointer whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all" style={{ backgroundColor: tab === v ? CAMPAIGN_RED : "transparent", color: tab === v ? "white" : "#a3a3a3", border: `1px solid ${tab === v ? CAMPAIGN_RED : "#262626"}` }}>{l}</button>
-          ))}
+      <div className="relative flex flex-col items-center gap-3 text-center">
+        <div className="flex items-center gap-2">
+          <span
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-q-full"
+            style={{ background: `linear-gradient(135deg, ${CAMPAIGN_RED}, ${CAMPAIGN_RED_DARK})` }}
+          >
+            <Icon as={Megaphone} size="sm" className="text-white" />
+          </span>
+          <span className="text-q-title-md-semi-bold text-q-text-primary">#GlasŽrtev</span>
         </div>
 
-        {tab === "dashboard" && (
-          <div className="flex flex-col gap-4">
-            {/* Hero */}
-            <section className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 p-8 md:p-12">
-              <div className="keyhole-bg" />
-              <div className="relative flex flex-col items-center gap-3 text-center">
-                <div className="flex items-center gap-2">
-                  <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: `linear-gradient(135deg, ${CAMPAIGN_RED}, ${CAMPAIGN_RED_DARK})` }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M3 10v4a1 1 0 001 1h3l3.3 3.3a1 1 0 001.7-.7V6.4a1 1 0 00-1.7-.7L7 9H4a1 1 0 00-1 1zm10 2a3 3 0 002 2.83v2.05A5 5 0 0113 12zm2-5.66v2.06A3 3 0 0113 6a5 5 0 012-4.66z"/></svg>
-                  </span>
-                  <span className="text-lg font-semibold text-white">#GlasŽrtev</span>
-                </div>
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Danes že</p>
-                {statsLoading ? <div className="h-20 w-20 animate-pulse rounded-full bg-neutral-800" /> : (
-                  <div className="count-up-enter">
-                    <span className="font-bold tabular-nums leading-none" style={{ fontSize: "clamp(3.5rem, 12vw, 7rem)", color: CAMPAIGN_RED }}>
-                      <AnimatedCounter target={stats?.todayCount ?? 0} />
-                    </span>
-                  </div>
-                )}
-                <p className="text-base text-neutral-400">prijav sovražnega govora in žaljivk danes</p>
-                {stats && stats.totalYear > 0 && (
-                  <div className="mt-4 flex items-center gap-2 rounded-full border border-neutral-800 px-4 py-2">
-                    <span className="text-sm text-neutral-400"><b className="tabular-nums text-white">{stats.totalYear.toLocaleString("sl-SI")}</b> prijav v {new Date().getFullYear()}</span>
-                  </div>
-                )}
-              </div>
-            </section>
+        <Typography as="p" variant="caption-sm-medium" className="uppercase tracking-wider text-q-text-tertiary">
+          Danes že
+        </Typography>
 
-            {/* Pyramid */}
-            {stats && (
-              <div className="flex flex-col gap-2">
-                <h3 className="mb-2 text-sm font-semibold text-white">Piramida resnosti</h3>
-                {(["groznja","sovrazni_govor","zaljivka"] as const).map((v, i) => {
-                  const cat = stats.categories.find(c => c.value === v); if (!cat) return null;
-                  const widths = ["45%","70%","100%"];
-                  return (
-                    <div key={v} className="mx-auto flex w-full items-center gap-3 rounded-xl border p-4 transition-all" style={{ width: widths[i], borderColor: `${cat.color}44`, backgroundColor: `${cat.color}0a` }}>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${cat.color}22`, color: cat.color }}><span className="text-sm font-bold">{cat.label[0]}</span></span>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <div className="flex items-center justify-between"><span className="text-sm font-medium text-white">{cat.label}</span><span className="text-sm font-bold tabular-nums" style={{ color: cat.color }}>{cat.count}</span></div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800"><div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(cat.percentage, 2)}%`, backgroundColor: cat.color }} /></div>
-                        <span className="text-xs text-neutral-500">{cat.percentage}% vseh prijav</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Charts */}
-            {stats && (
-              <div className="grid gap-4 lg:grid-cols-2">
-                {/* Stacked Area Chart */}
-                <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-white">Gibanje po mesecih</h3>
-                    <div className="flex gap-3 text-xs text-neutral-500">
-                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: CAT_ZALJIVKA }} /> Žaljivke</span>
-                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: CAT_SOVRAZNI }} /> Sovražni</span>
-                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: CAT_GROZNJA }} /> Grožnje</span>
-                    </div>
-                  </div>
-                  <StackedChart monthly={stats.monthly} />
-                </div>
-                {/* Heatmap */}
-                <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-                  <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold text-white">Kdaj se zgodi</h3><span className="text-xs text-neutral-500">Dan × ura</span></div>
-                  <HeatmapGrid heatmap={stats.heatmap} />
-                </div>
-              </div>
-            )}
-
-            {/* Platforms */}
-            {stats && stats.platforms.length > 0 && (
-              <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-                <h3 className="mb-3 text-sm font-semibold text-white">Platforme</h3>
-                <div className="flex flex-col gap-2">
-                  {stats.platforms.map(p => {
-                    const b = platformBadge(p.platform); const max = Math.max(...stats.platforms.map(x => x.count), 1);
-                    return (
-                      <div key={p.platform} className="flex items-center gap-3">
-                        <span className="grid h-7 min-w-7 place-items-center rounded px-1.5 text-xs font-medium text-white" style={{ backgroundColor: b.b }}>{b.l}</span>
-                        <div className="h-5 flex-1 overflow-hidden rounded bg-neutral-800"><div className="h-full rounded transition-all duration-500" style={{ width: `${(p.count / max) * 100}%`, backgroundColor: CAMPAIGN_RED }} /></div>
-                        <span className="w-12 text-right text-sm font-medium tabular-nums text-white">{p.count}</span><span className="w-10 text-right text-xs text-neutral-500">{p.percentage}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Voices Feed */}
-            {stats && <VoicesFeed reports={stats.recentReports} />}
-
-            {/* Words */}
-            {stats && stats.words.length > 0 && (
-              <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-                <h3 className="text-base font-semibold text-white">Besede, ki ranijo</h3>
-                <p className="mb-4 text-sm text-neutral-400">Najpogostejše besede v anonimiziranih prijavah</p>
-                <div className="flex flex-col gap-2">
-                  {stats.words.map((w, i) => { const max = stats.words[0].count; return (
-                    <div key={w.word} className="flex items-center gap-3">
-                      <span className="w-5 text-right text-xs text-neutral-500 tabular-nums">{i + 1}</span>
-                      <span className="w-32 truncate text-sm font-medium text-white">{w.word}</span>
-                      <div className="h-6 flex-1 overflow-hidden rounded bg-neutral-800">
-                        <div className="flex h-full items-center rounded px-2 transition-all duration-500" style={{ width: `${Math.max((w.count / max) * 100, 5)}%`, backgroundColor: `${CAMPAIGN_RED}33`, borderLeft: `3px solid ${CAMPAIGN_RED}` }}>
-                          <span className="text-xs font-medium tabular-nums" style={{ color: CAMPAIGN_RED }}>{w.count}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ); })}
-                </div>
-              </div>
-            )}
-
-            {/* Weekly Card */}
-            <WeeklyCardSection />
+        {isPending ? (
+          <div className="py-4">
+            <Loader size="lg" color="neutral" />
+          </div>
+        ) : (
+          <div className="gz-counter-enter">
+            <span
+              className="font-bold tabular-nums leading-none"
+              style={{ fontSize: "clamp(3.5rem, 12vw, 7rem)", color: CAMPAIGN_RED }}
+            >
+              <AnimatedCounter target={todayCount} />
+            </span>
           </div>
         )}
 
-        {tab === "submit" && <ReportFormSection onSubmitted={() => { setTab("dashboard"); loadStats(); }} />}
-        {tab === "categories" && <CategoryLegend />}
-        {tab === "analytics" && analytics && (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400">
-              Skupno {analytics.totalWithDemographics} prijav z demografskimi podatki. Vsi podatki so agregirani in anonimni.
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <BreakdownCard title="Po spolu" data={analytics.gender} />
-              <BreakdownCard title="Po starostni skupini" data={analytics.ageGroup} />
-              <BreakdownCard title="Otroci" data={analytics.hasChildren} />
-              <BreakdownCard title="Motiv napada" data={analytics.attackMotive} />
-            </div>
+        <Typography as="p" variant="body-md-regular" color="secondary">
+          prijav sovražnega govora in žaljivk danes
+        </Typography>
+
+        {totalYear > 0 && (
+          <div className="mt-4 flex items-center gap-2 rounded-q-full border border-q-border-subtle px-4 py-2">
+            <Icon as={TrendingUp} size="xs" className="text-q-text-tertiary" />
+            <Typography as="span" variant="body-sm-regular" className="text-q-text-secondary">
+              <span className="font-semibold tabular-nums">{totalYear.toLocaleString("sl-SI")}</span> prijav v {new Date().getFullYear()}
+            </Typography>
           </div>
         )}
-
-        <footer className="flex items-center justify-center gap-2 py-6 text-center">
-          <span className="text-xs text-neutral-600">#GlasŽrtev — anonimiziran števec sovražnega govora. Imena in osebni podatki niso objavljeni.</span>
-        </footer>
       </div>
+    </section>
+  );
+}
+
+// ─── Category Pyramid ───
+
+function CategoryPyramid({ categories }: { categories: CategoryStat[] }) {
+  // Render top→bottom: Grožnje (narrow, strong) → Sovražni govor → Žaljivke (widest, ambient)
+  const order = ["groznja", "sovrazni_govor", "zaljivka"];
+  const widths = ["45%", "70%", "100%"];
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Typography as="h3" variant="title-sm-semi-bold" className="mb-2 text-q-text-primary">
+        Piramida resnosti
+      </Typography>
+      {order.map((catValue, i) => {
+        const cat = categories.find((c) => c.value === catValue);
+        if (!cat) return null;
+        const IconComp = CATEGORY_ICONS[cat.value] ?? ShieldAlert;
+        return (
+          <div
+            key={cat.value}
+            className="mx-auto flex items-center gap-3 rounded-q-500 border p-4 transition-all"
+            style={{
+              width: widths[i],
+              borderColor: `${cat.color}44`,
+              backgroundColor: `${cat.color}0a`,
+            }}
+          >
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-q-400"
+              style={{ backgroundColor: `${cat.color}22`, color: cat.color }}
+            >
+              <Icon as={IconComp} size="sm" />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-q-label-lg-medium text-q-text-primary">{cat.label}</span>
+                <span className="text-q-title-sm-semi-bold tabular-nums" style={{ color: cat.color }}>
+                  {cat.count}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-q-full bg-q-background-tertiary">
+                <div
+                  className="h-full rounded-q-full transition-all duration-700"
+                  style={{ width: `${Math.max(cat.percentage, 2)}%`, backgroundColor: cat.color }}
+                />
+              </div>
+              <span className="text-q-caption-sm-regular text-q-text-tertiary">{cat.percentage}% vseh prijav</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Stacked Chart ───
-function StackedChart({ monthly }: { monthly: MonthlyStat[] }) {
-  const maxTotal = Math.max(...monthly.map(m => m.total), 1);
-  const W = 600, H = 200, pad = 24, iW = W - pad * 2, iH = H - pad * 2;
-  const step = monthly.length > 1 ? iW / (monthly.length - 1) : 0;
-  function path(getVal: (m: MonthlyStat) => number, offset: (m: MonthlyStat) => number) {
-    const pts = monthly.map((m, i) => ({ x: pad + i * step, yT: pad + iH - (getVal(m) / maxTotal) * iH, yB: pad + iH - (offset(m) / maxTotal) * iH }));
-    return `${pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.yT}`).join(" ")} ${pts.reverse().map(p => `L ${p.x} ${p.yB}`).join(" ")} Z`;
+// ─── Stacked Area Chart ───
+
+function StackedAreaChart({ monthly }: { monthly: MonthlyStat[] }) {
+  const maxTotal = Math.max(...monthly.map((m) => m.total), 1);
+  const chartW = 600;
+  const chartH = 200;
+  const padding = 24;
+  const innerW = chartW - padding * 2;
+  const innerH = chartH - padding * 2;
+
+  const xStep = monthly.length > 1 ? innerW / (monthly.length - 1) : 0;
+
+  function buildPath(getValue: (m: MonthlyStat) => number): string {
+    const points = monthly.map((m, i) => ({
+      x: padding + i * xStep,
+      y: padding + innerH - (getValue(m) / maxTotal) * innerH,
+    }));
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   }
+
+  function buildStackedPath(getValue: (m: MonthlyStat) => number, offsetFn: (m: MonthlyStat) => number): string {
+    const points = monthly.map((m, i) => ({
+      x: padding + i * xStep,
+      yTop: padding + innerH - (getValue(m) / maxTotal) * innerH,
+      yBot: padding + innerH - (offsetFn(m) / maxTotal) * innerH,
+    }));
+    const top = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.yTop}`).join(" ");
+    const bot = points.slice().reverse().map((p) => `L ${p.x} ${p.yBot}`).join(" ");
+    return `${top} ${bot} Z`;
+  }
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-      {[0,0.25,0.5,0.75,1].map(t => <line key={t} x1={pad} x2={W-pad} y1={pad+iH*t} y2={pad+iH*t} stroke="#262626" strokeWidth="1" strokeDasharray="2 4" />)}
-      <path d={path(m => m.zaljivke, () => 0)} fill={CAT_ZALJIVKA} opacity="0.7" />
-      <path d={path(m => m.zaljivke + m.sovrazniGovor, m => m.zaljivke)} fill={CAT_SOVRAZNI} opacity="0.7" />
-      <path d={path(m => m.zaljivke + m.sovrazniGovor + m.groznje, m => m.zaljivke + m.sovrazniGovor)} fill={CAT_GROZNJA} opacity="0.7" />
-      {monthly.map((m, i) => <text key={i} x={pad+i*step} y={H-4} textAnchor="middle" fill="#666" fontSize="11">{m.label}</text>)}
-    </svg>
+    <Card surface="solid" className="flex flex-col gap-3 p-4 md:p-6">
+      <div className="flex items-center justify-between">
+        <Typography as="h3" variant="title-sm-semi-bold" className="text-q-text-primary">
+          Gibanje po mesecih
+        </Typography>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-q-caption-sm-regular text-q-text-tertiary">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: CAT_ZALJIVKA }} /> Žaljivke
+          </span>
+          <span className="flex items-center gap-1 text-q-caption-sm-regular text-q-text-tertiary">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: CAT_SOVRAZNI }} /> Sovražni
+          </span>
+          <span className="flex items-center gap-1 text-q-caption-sm-regular text-q-text-tertiary">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: CAT_GROZNJA }} /> Grožnje
+          </span>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{ height: "auto" }}>
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+          <line
+            key={t}
+            x1={padding}
+            x2={chartW - padding}
+            y1={padding + innerH * t}
+            y2={padding + innerH * t}
+            stroke="var(--hf-color-border-subtle)"
+            strokeWidth="1"
+            strokeDasharray="2 4"
+          />
+        ))}
+        {/* Stacked areas: base=žaljivke, middle=+sovrazni, top=+groznje */}
+        <path
+          d={buildStackedPath((m) => m.zaljivke, () => 0)}
+          fill={CAT_ZALJIVKA}
+          opacity="0.7"
+        />
+        <path
+          d={buildStackedPath((m) => m.zaljivke + m.sovrazniGovor, (m) => m.zaljivke)}
+          fill={CAT_SOVRAZNI}
+          opacity="0.7"
+        />
+        <path
+          d={buildStackedPath((m) => m.zaljivke + m.sovrazniGovor + m.groznje, (m) => m.zaljivke + m.sovrazniGovor)}
+          fill={CAT_GROZNJA}
+          opacity="0.7"
+        />
+        {/* X labels */}
+        {monthly.map((m, i) => (
+          <text
+            key={`${m.year}-${m.month}`}
+            x={padding + i * xStep}
+            y={chartH - 4}
+            textAnchor="middle"
+            fill="var(--hf-color-text-tertiary)"
+            fontSize="11"
+          >
+            {m.label}
+          </text>
+        ))}
+      </svg>
+    </Card>
   );
 }
 
 // ─── Heatmap ───
-function HeatmapGrid({ heatmap }: { heatmap: HeatmapCell[] }) {
-  const max = Math.max(...heatmap.map(c => c.count), 1);
-  const color = (c: number) => c === 0 ? "#171717" : `rgba(192,57,43,${0.2 + Math.min(c/max,1)*0.8})`;
+
+function HeatmapChart({ heatmap }: { heatmap: HeatmapCell[] }) {
+  const maxCount = Math.max(...heatmap.map((c) => c.count), 1);
+
+  function cellColor(count: number): string {
+    if (count === 0) return "var(--hf-color-background-tertiary)";
+    const intensity = Math.min(count / maxCount, 1);
+    const alpha = 0.2 + intensity * 0.8;
+    return `rgba(192, 57, 43, ${alpha})`;
+  }
+
   return (
-    <div className="flex gap-1 overflow-x-auto pb-2">
-      <div className="flex shrink-0 flex-col gap-[2px] pt-5">
-        {DAY_NAMES_SL.map(d => <div key={d} className="flex h-4 items-center justify-end pr-1 text-xs text-neutral-500" style={{ width: "28px" }}>{d}</div>)}
+    <Card surface="solid" className="flex flex-col gap-3 p-4 md:p-6">
+      <div className="flex items-center justify-between">
+        <Typography as="h3" variant="title-sm-semi-bold" className="text-q-text-primary">
+          Kdaj se zgodi
+        </Typography>
+        <Typography as="p" variant="caption-sm-regular" className="text-q-text-tertiary">
+          Dan v tednu × ura
+        </Typography>
       </div>
-      <div className="flex gap-[2px]">
-        {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} className="flex flex-col gap-[2px]">
-            {Array.from({ length: 7 }, (_, d) => { const c = heatmap.find(x => x.day === d && x.hour === h); return <div key={d} className="h-4 w-4 rounded-sm" style={{ backgroundColor: color(c?.count ?? 0) }} title={`${DAY_NAMES_SL[d]} ${h}:00 — ${c?.count ?? 0}`} />; })}
-            <div className="mt-1 text-center text-xs text-neutral-600">{h % 3 === 0 ? `${h}h` : ""}</div>
-          </div>
-        ))}
+      <div className="flex gap-1 overflow-x-auto pb-2">
+        {/* Day labels */}
+        <div className="flex shrink-0 flex-col gap-[2px] pt-5">
+          {DAY_NAMES_SL.map((day) => (
+            <div key={day} className="flex h-4 items-center justify-end pr-1 text-q-caption-sm-regular text-q-text-tertiary" style={{ width: "28px" }}>
+              {day}
+            </div>
+          ))}
+        </div>
+        {/* Grid */}
+        <div className="flex gap-[2px]">
+          {Array.from({ length: 24 }, (_, hour) => (
+            <div key={hour} className="flex flex-col gap-[2px]">
+              {Array.from({ length: 7 }, (_, day) => {
+                const cell = heatmap.find((c) => c.day === day && c.hour === hour);
+                const count = cell?.count ?? 0;
+                return (
+                  <div
+                    key={`${day}-${hour}`}
+                    className="h-4 w-4 rounded-sm transition-colors"
+                    style={{ backgroundColor: cellColor(count) }}
+                    title={`${DAY_NAMES_SL[day]} ${hour}:00 — ${count} prijav`}
+                  />
+                );
+              })}
+              <div className="mt-1 text-center text-q-caption-sm-regular text-q-text-tertiary">
+                {hour % 3 === 0 ? `${hour}h` : ""}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+      <div className="flex items-center gap-2">
+        <Typography as="span" variant="caption-sm-regular" className="text-q-text-tertiary">manj</Typography>
+        <div className="flex gap-1">
+          {[0.2, 0.4, 0.6, 0.8, 1].map((a) => (
+            <div key={a} className="h-3 w-3 rounded-sm" style={{ backgroundColor: `rgba(192, 57, 43, ${a})` }} />
+          ))}
+        </div>
+        <Typography as="span" variant="caption-sm-regular" className="text-q-text-tertiary">več</Typography>
+      </div>
+    </Card>
   );
 }
 
-// ─── Voices Feed ───
+// ─── Platform Breakdown ───
+
+function PlatformBreakdown({ platforms }: { platforms: PlatformStat[] }) {
+  const max = Math.max(...platforms.map((p) => p.count), 1);
+  return (
+    <Card surface="solid" className="flex flex-col gap-3 p-4 md:p-6">
+      <Typography as="h3" variant="title-sm-semi-bold" className="text-q-text-primary">
+        Platforme
+      </Typography>
+      <div className="flex flex-col gap-2">
+        {platforms.map((p) => {
+          const badge = platformBadge(p.platform);
+          return (
+            <div key={p.platform} className="flex items-center gap-3">
+              <span
+                className="grid h-7 min-w-7 shrink-0 place-items-center rounded-q-300 px-1.5 text-q-caption-sm-medium text-white"
+                style={{ backgroundColor: badge.bg }}
+              >
+                {badge.label}
+              </span>
+              <div className="h-5 flex-1 overflow-hidden rounded-q-200 bg-q-background-tertiary">
+                <div
+                  className="h-full rounded-q-200 transition-all duration-500"
+                  style={{ width: `${(p.count / max) * 100}%`, backgroundColor: CAMPAIGN_RED }}
+                />
+              </div>
+              <span className="w-16 shrink-0 text-right text-q-body-sm-medium tabular-nums text-q-text-primary">
+                {p.count}
+              </span>
+              <span className="w-10 shrink-0 text-right text-q-caption-sm-regular text-q-text-tertiary">{p.percentage}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Glasovi — Auto-scroll Feed ───
+
 function VoicesFeed({ reports }: { reports: RecentReport[] }) {
   const [paused, setPaused] = useState(false);
-  if (!reports.length) return <div className="py-12 text-center text-neutral-500">Še ni prijav.</div>;
+
+  if (reports.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-12 text-center">
+        <Icon as={Info} size="lg" className="text-q-text-tertiary" />
+        <Typography as="p" variant="body-sm-regular" color="secondary">
+          Še ni prijav. Bodite prvi, ki delite svojo izkušnjo.
+        </Typography>
+      </div>
+    );
+  }
+
+  // Duplicate the list for seamless loop
   const doubled = [...reports, ...reports];
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div><h3 className="text-base font-semibold text-white">Glasovi</h3><p className="text-sm text-neutral-400">Kaj ljudje doživlja danes</p></div>
-        <button onClick={() => setPaused(p => !p)} className="cursor-pointer rounded-lg border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800">{paused ? "Predvajaj" : "Ustavi"}</button>
+        <div>
+          <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">
+            Glasovi
+          </Typography>
+          <Typography as="p" variant="body-sm-regular" color="secondary">
+            Kaj ljudje doživlja danes
+          </Typography>
+        </div>
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={() => setPaused((p) => !p)}
+          start={<Icon as={Clock} size="sm" />}
+        >
+          {paused ? "Predvajaj" : "Ustavi"}
+        </Button>
       </div>
-      <div className="relative h-[400px] overflow-hidden rounded-xl border border-neutral-800" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}>
-        <div className={`auto-scroll ${paused ? "auto-scroll-paused" : ""}`}>
+
+      <div
+        className="relative h-[400px] overflow-hidden rounded-q-500 border border-q-border-subtle"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+      >
+        <div
+          className={`gz-auto-scroll ${paused ? "gz-auto-scroll-paused" : ""}`}
+        >
           <div className="flex flex-col gap-2 p-3">
-            {doubled.map((r, idx) => { const b = platformBadge(r.platform); return (
-              <div key={`${r.id}-${idx}`} className="flex flex-col gap-2 rounded-lg border border-neutral-800 bg-neutral-900 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="grid h-6 min-w-6 place-items-center rounded px-1.5 text-xs font-medium text-white" style={{ backgroundColor: b.b }}>{b.l}</span>
-                    <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: `${r.category_color}22`, color: r.category_color }}>{r.category_label}</span>
+            {doubled.map((report, idx) => {
+              const badge = platformBadge(report.platform);
+              return (
+                <div
+                  key={`${report.id}-${idx}`}
+                  className="flex flex-col gap-2 rounded-q-400 border border-q-border-subtle bg-q-background-tertiary p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="grid h-6 min-w-6 shrink-0 place-items-center rounded-q-300 px-1.5 text-q-caption-sm-medium text-white"
+                        style={{ backgroundColor: badge.bg }}
+                      >
+                        {badge.label}
+                      </span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-q-caption-sm-medium"
+                        style={{ backgroundColor: `${report.category_color}22`, color: report.category_color }}
+                      >
+                        {report.category_label}
+                      </span>
+                    </div>
+                    <span className="text-q-caption-sm-regular text-q-text-tertiary">
+                      {relativeTime(report.created_at)}
+                    </span>
                   </div>
-                  <span className="text-xs text-neutral-500">{relativeTime(r.created_at)}</span>
+                  <p className="text-q-body-sm-regular text-q-text-secondary leading-relaxed">
+                    {report.anonymized_text}
+                  </p>
                 </div>
-                <p className="text-sm leading-relaxed text-neutral-300">{r.anonymized_text}</p>
-              </div>
-            ); })}
+              );
+            })}
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-neutral-950 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-neutral-950 to-transparent" />
+        {/* Fade edges */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-q-background-primary to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-q-background-primary to-transparent" />
       </div>
-      <p className="text-center text-xs text-neutral-500">Vsa besedila so anonimizirana. Imena so zamenjana z ████.</p>
+
+      <Typography as="p" variant="caption-sm-regular" className="text-center text-q-text-tertiary">
+        Vsa besedila so anonimizirana. Imena in osebni podatki so zamenjani z ████.
+      </Typography>
     </div>
   );
 }
 
-// ─── Weekly Card ───
-function WeeklyCardSection() {
-  const [data, setData] = useState<WeeklySummary | null>(null);
-  const [loading, setLoading] = useState(true);
+// ─── Besede, ki ranijo ───
+
+function WordsThatHurt({ words }: { words: WordFreqItem[] }) {
+  if (words.length === 0) {
+    return (
+      <Card surface="solid" className="flex items-center justify-center py-12">
+        <Typography as="p" variant="body-sm-regular" color="secondary">
+          Ni dovolj podatkov za analizo besed.
+        </Typography>
+      </Card>
+    );
+  }
+  const max = words[0].count;
+
+  return (
+    <Card surface="solid" className="flex flex-col gap-4 p-4 md:p-6">
+      <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">
+        Besede, ki ranijo
+      </Typography>
+      <Typography as="p" variant="body-sm-regular" color="secondary">
+        Najpogostejše besede v anonimiziranih prijavah
+      </Typography>
+      <div className="flex flex-col gap-2">
+        {words.map((w, i) => (
+          <div key={w.word} className="flex items-center gap-3">
+            <span className="w-5 shrink-0 text-right text-q-caption-sm-regular text-q-text-tertiary tabular-nums">
+              {i + 1}
+            </span>
+            <span className="w-32 shrink-0 truncate text-q-body-sm-medium text-q-text-primary">
+              {w.word}
+            </span>
+            <div className="h-6 flex-1 overflow-hidden rounded-q-200 bg-q-background-tertiary">
+              <div
+                className="flex h-full items-center rounded-q-200 px-2 transition-all duration-500"
+                style={{
+                  width: `${Math.max((w.count / max) * 100, 5)}%`,
+                  backgroundColor: `${CAMPAIGN_RED}33`,
+                  borderLeft: `3px solid ${CAMPAIGN_RED}`,
+                }}
+              >
+                <span className="text-q-caption-sm-medium tabular-nums" style={{ color: CAMPAIGN_RED }}>
+                  {w.count}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Weekly Shareable Card ───
+
+function WeeklyCard() {
+  const { data, isPending } = useQuery({
+    queryKey: ["weekly-summary"],
+    queryFn: () => getWeeklySummary(),
+  });
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  useEffect(() => { api.getWeeklySummary().then(setData).finally(() => setLoading(false)); }, []);
-
-  const shareText = data ? `${data.total} prijav sovražnega govora ta teden v Sloveniji.\n${data.zaljivke} žaljivk, ${data.sovrazniGovor} sovražnega govora, ${data.groznje} groženj.\n#GlasŽrtev` : "";
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-
-  function getBlob(): Promise<Blob | null> {
+  function getCanvasBlob(): Promise<Blob | null> {
     if (!data || !canvasRef.current) return Promise.resolve(null);
-    const c = canvasRef.current, ctx = c.getContext("2d"); if (!ctx) return Promise.resolve(null);
-    c.width = 1080; c.height = 1080;
-    ctx.fillStyle = "#181818"; ctx.fillRect(0, 0, 1080, 1080);
-    ctx.fillStyle = CAMPAIGN_RED; ctx.fillRect(0, 0, 1080, 8);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 56px Arial"; ctx.fillText("#GlasŽrtev", 60, 90);
-    ctx.fillStyle = "#888"; ctx.font = "28px Arial"; ctx.fillText(`Tedenski povzetek · ${data.startDate} – ${data.endDate}`, 60, 130);
-    ctx.fillStyle = CAMPAIGN_RED; ctx.font = "bold 180px Arial"; ctx.fillText(String(data.total), 60, 320);
-    ctx.fillStyle = "#ccc"; ctx.font = "32px Arial"; ctx.fillText("prijav ta teden", 60, 370);
-    [[CAT_ZALJIVKA,"Žaljivke",data.zaljivke],[CAT_SOVRAZNI,"Sovražni govor",data.sovrazniGovor],[CAT_GROZNJA,"Grožnje",data.groznje]].forEach(([c,l,n],i) => {
-      const y = 460+i*90; ctx.fillStyle = c as string; ctx.fillRect(60,y,12,60);
-      ctx.fillStyle = "#fff"; ctx.font = "bold 36px Arial"; ctx.fillText(String(n),100,y+45);
-      ctx.fillStyle = "#aaa"; ctx.font = "28px Arial"; ctx.fillText(l as string,200,y+45);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return Promise.resolve(null);
+
+    const W = 1080, H = 1080;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#181818";
+    ctx.fillRect(0, 0, W, H);
+
+    // Top bar
+    ctx.fillStyle = CAMPAIGN_RED;
+    ctx.fillRect(0, 0, W, 8);
+
+    // Logo area
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 56px Arial, sans-serif";
+    ctx.fillText("#GlasŽrtev", 60, 90);
+
+    ctx.fillStyle = "#888888";
+    ctx.font = "28px Arial, sans-serif";
+    ctx.fillText(`Tedenski povzetek · ${data.startDate} – ${data.endDate}`, 60, 130);
+
+    // Big number
+    ctx.fillStyle = CAMPAIGN_RED;
+    ctx.font = "bold 180px Arial, sans-serif";
+    ctx.fillText(String(data.total), 60, 320);
+
+    ctx.fillStyle = "#cccccc";
+    ctx.font = "32px Arial, sans-serif";
+    ctx.fillText("prijav ta teden", 60, 370);
+
+    // Category breakdown
+    const cats = [
+      { label: "Žaljivke", count: data.zaljivke, color: CAT_ZALJIVKA },
+      { label: "Sovražni govor", count: data.sovrazniGovor, color: CAT_SOVRAZNI },
+      { label: "Grožnje", count: data.groznje, color: CAT_GROZNJA },
+    ];
+    cats.forEach((cat, i) => {
+      const y = 460 + i * 90;
+      ctx.fillStyle = cat.color;
+      ctx.fillRect(60, y, 12, 60);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 36px Arial, sans-serif";
+      ctx.fillText(String(cat.count), 100, y + 45);
+      ctx.fillStyle = "#aaaaaa";
+      ctx.font = "28px Arial, sans-serif";
+      ctx.fillText(cat.label, 200, y + 45);
     });
-    ctx.fillStyle = "#666"; ctx.font = "24px Arial"; ctx.fillText(`Dnevno povprečje: ${data.dailyAvg} · Top: ${data.topPlatform}`, 60, 780);
-    return new Promise(r => c.toBlob(b => r(b), "image/png"));
+
+    // Bottom info
+    ctx.fillStyle = "#666666";
+    ctx.font = "24px Arial, sans-serif";
+    ctx.fillText(`Dnevno povprečje: ${data.dailyAvg}  ·  Najpogostejša platforma: ${data.topPlatform}`, 60, 780);
+
+    // CTA
+    ctx.fillStyle = "#444444";
+    ctx.font = "22px Arial, sans-serif";
+    ctx.fillText("Prijavi tudi ti → glaszrttev.higgsfield.app", 60, 1020);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    });
   }
 
-  async function download() { const b = await getBlob(); if (!b) return; const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "glaszrttev.png"; a.click(); URL.revokeObjectURL(u); }
-  function shareX() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, "_blank"); }
-  function shareFB() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, "_blank"); }
-  async function shareImg(name: string) {
-    const b = await getBlob(); if (!b) return; const f = new File([b], "glaszrttev.png", { type: "image/png" });
-    if (navigator.canShare?.({ files: [f] })) { try { await navigator.share({ files: [f], text: shareText }); } catch {} }
-    else { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "glaszrttev.png"; a.click(); URL.revokeObjectURL(u); alert(`Sliko prenesite in jo objavite na ${name}.`); }
+  async function generateCard() {
+    const blob = await getCanvasBlob();
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "glaszrttev-tedenski-povzetek.png";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Kartica prenesena.");
+  }
+
+  const shareText = data
+    ? `${data.total} prijav sovražnega govora ta teden v Sloveniji.\n${data.zaljivke} žaljivk, ${data.sovrazniGovor} sovražnega govora, ${data.groznje} groženj.\n#GlasŽrtev`
+    : "";
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://glaszrttev.higgsfield.app";
+
+  function shareToX() {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=500");
+  }
+
+  function shareToFacebook() {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=500");
+  }
+
+  async function shareToInstagram() {
+    await shareImageToPlatform("Instagramu");
+  }
+
+  async function shareToTikTok() {
+    await shareImageToPlatform("TikToku");
+  }
+
+  async function shareToYouTube() {
+    await shareImageToPlatform("YouTube");
+  }
+
+  async function shareImageToPlatform(platformName: string) {
+    const blob = await getCanvasBlob();
+    if (!blob) {
+      toast.error("Napaka pri generiranju kartice.");
+      return;
+    }
+    const file = new File([blob], "glaszrttev-tedenski-povzetek.png", { type: "image/png" });
+
+    if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: shareText, title: "#GlasŽrtev — tedenski povzetek" });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "glaszrttev-tedenski-povzetek.png";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.info(`Sliko prenesite in jo objavite na ${platformName}.`);
+    }
+  }
+
+  function shareCard() {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({
+        title: "#GlasŽrtev — tedenski povzetek",
+        text: shareText,
+        url: shareUrl,
+      }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Povezava kopirana.");
+    }
   }
 
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-      <h3 className="text-base font-semibold text-white">Kartica tedna</h3>
-      <p className="mb-3 mt-1 text-sm text-neutral-400">{loading ? "Nalaganje…" : data ? `${data.startDate} – ${data.endDate} · ${data.total} prijav` : ""}</p>
-      {!loading && data && (
-        <div className="mb-4 rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+    <Card surface="solid" className="flex flex-col gap-4 p-4 md:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">
+            Kartica tedna
+          </Typography>
+          <Typography as="p" variant="body-sm-regular" color="secondary" className="mt-1">
+            {isPending
+              ? "Nalaganje…"
+              : data
+                ? `${data.startDate} – ${data.endDate} · ${data.total} prijav`
+                : ""}
+          </Typography>
+        </div>
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-q-400"
+          style={{ backgroundColor: `${CAMPAIGN_RED}22`, color: CAMPAIGN_RED }}
+        >
+          <Icon as={Sparkles} size="md" />
+        </span>
+      </div>
+
+      {/* Preview */}
+      {!isPending && data && (
+        <div className="rounded-q-500 border border-q-border-subtle bg-q-background-secondary p-4">
           <div className="mb-3 h-1 rounded-full" style={{ backgroundColor: CAMPAIGN_RED }} />
-          <div className="flex items-end gap-2"><span className="text-4xl font-bold tabular-nums" style={{ color: CAMPAIGN_RED }}>{data.total}</span><span className="mb-1 text-sm text-neutral-500">prijav ta teden</span></div>
+          <div className="flex items-end gap-2">
+            <span className="text-4xl font-bold tabular-nums" style={{ color: CAMPAIGN_RED }}>{data.total}</span>
+            <span className="mb-1 text-q-body-sm-regular text-q-text-tertiary">prijav ta teden</span>
+          </div>
           <div className="mt-3 flex flex-col gap-1">
-            {[[CAT_ZALJIVKA,"Žaljivke",data.zaljivke],[CAT_SOVRAZNI,"Sovražni govor",data.sovrazniGovor],[CAT_GROZNJA,"Grožnje",data.groznje]].map(([c,l,n]) => (
-              <div key={l as string} className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm" style={{ backgroundColor: c as string }} /><span className="text-sm text-neutral-400">{l as string}</span><span className="ml-auto text-sm font-medium tabular-nums text-white">{n as number}</span></div>
-            ))}
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: CAT_ZALJIVKA }} />
+              <span className="text-q-body-sm-regular text-q-text-secondary">Žaljivke</span>
+              <span className="ml-auto text-q-body-sm-medium tabular-nums text-q-text-primary">{data.zaljivke}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: CAT_SOVRAZNI }} />
+              <span className="text-q-body-sm-regular text-q-text-secondary">Sovražni govor</span>
+              <span className="ml-auto text-q-body-sm-medium tabular-nums text-q-text-primary">{data.sovrazniGovor}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: CAT_GROZNJA }} />
+              <span className="text-q-body-sm-regular text-q-text-secondary">Grožnje</span>
+              <span className="ml-auto text-q-body-sm-medium tabular-nums text-q-text-primary">{data.groznje}</span>
+            </div>
+          </div>
+          <div className="mt-3 border-t border-q-border-subtle pt-2">
+            <Typography as="p" variant="caption-sm-regular" className="text-q-text-tertiary">
+              Dnevno povprečje: {data.dailyAvg} · Top: {data.topPlatform}
+            </Typography>
           </div>
         </div>
       )}
+
       <canvas ref={canvasRef} className="hidden" />
-      <p className="mb-2 text-xs font-medium text-neutral-500">Deli na družbenih omrežjih</p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-        <button onClick={shareX} disabled={loading} className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: "#000" }}>X</button>
-        <button onClick={shareFB} disabled={loading} className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: "#1877f2" }}>Facebook</button>
-        <button onClick={() => shareImg("Instagramu")} disabled={loading} className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ background: "linear-gradient(135deg,#405de6,#e1306c,#f77737)" }}>Instagram</button>
-        <button onClick={() => shareImg("TikToku")} disabled={loading} className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: "#010101" }}>TikTok</button>
-        <button onClick={() => shareImg("YouTube")} disabled={loading} className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: "#ff0000" }}>YouTube</button>
+
+      {/* Platform share buttons */}
+      <div className="flex flex-col gap-2">
+        <Typography as="p" variant="caption-sm-medium" className="text-q-text-tertiary">
+          Deli na družbenih omrežjih
+        </Typography>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          <button
+            type="button"
+            disabled={isPending || !data}
+            onClick={shareToX}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-q-500 px-3 py-3 text-q-label-md-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ backgroundColor: "#000000" }}
+          >
+            <IconX size={16} />
+            X
+          </button>
+          <button
+            type="button"
+            disabled={isPending || !data}
+            onClick={shareToFacebook}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-q-500 px-3 py-3 text-q-label-md-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ backgroundColor: "#1877f2" }}
+          >
+            <IconFacebook size={16} />
+            Facebook
+          </button>
+          <button
+            type="button"
+            disabled={isPending || !data}
+            onClick={() => void shareToInstagram()}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-q-500 px-3 py-3 text-q-label-md-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #405de6, #e1306c, #f77737)" }}
+          >
+            <IconInstagram size={16} />
+            Instagram
+          </button>
+          <button
+            type="button"
+            disabled={isPending || !data}
+            onClick={() => void shareToTikTok()}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-q-500 px-3 py-3 text-q-label-md-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ backgroundColor: "#010101" }}
+          >
+            <IconTikTok size={16} />
+            TikTok
+          </button>
+          <button
+            type="button"
+            disabled={isPending || !data}
+            onClick={() => void shareToYouTube()}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-q-500 px-3 py-3 text-q-label-md-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ backgroundColor: "#ff0000" }}
+          >
+            <IconYouTube size={16} />
+            YouTube
+          </button>
+        </div>
       </div>
-      <button onClick={download} disabled={loading} className="mt-2 w-full rounded-lg border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 disabled:opacity-40">Prenesi PNG</button>
-    </div>
+
+      {/* Secondary actions */}
+      <div className="flex gap-2">
+        <Button
+          variant="tertiary"
+          size="md"
+          onClick={generateCard}
+          disabled={isPending || !data}
+          start={<Icon as={Download} size="sm" />}
+        >
+          Prenesi PNG
+        </Button>
+        <Button
+          variant="tertiary"
+          size="md"
+          onClick={shareCard}
+          disabled={isPending || !data}
+          start={<Icon as={Share2} size="sm" />}
+        >
+          Kopiraj povezavo
+        </Button>
+      </div>
+    </Card>
   );
 }
 
 // ─── Report Form ───
-function ReportFormSection({ onSubmitted }: { onSubmitted: () => void }) {
+
+function ReportForm({ onSubmitted }: { onSubmitted: () => void }) {
+  const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [platform, setPlatform] = useState<string | null>(null);
@@ -411,70 +905,419 @@ function ReportFormSection({ onSubmitted }: { onSubmitted: () => void }) {
   const [attackMotive, setAttackMotive] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const canSubmit = text.trim().length >= 3 && category && platform && !submitting;
+
+  const canSubmit = text.trim().length >= 3 && category != null && platform != null && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit || !category || !platform) return;
-    setSubmitting(true); setError(null);
+    setSubmitting(true);
+    setError(null);
     try {
-      await api.submitReport({ text, category, platform, gender: gender ?? undefined, age_group: ageGroup ?? undefined, has_children: hasChildren ?? undefined, attack_motive: attackMotive ?? undefined });
-      setText(""); setCategory(null); setPlatform(null); setGender(null); setAgeGroup(null); setHasChildren(null); setAttackMotive(null);
-      setSuccess(true); setTimeout(() => onSubmitted(), 1500);
-    } catch (e) { setError(e instanceof Error ? e.message : "Napaka pri oddaji."); }
-    finally { setSubmitting(false); }
+      const result = await submitReport({
+        data: {
+          text,
+          category: category as "zaljivka" | "sovrazni_govor" | "groznja",
+          platform,
+          gender: (gender as "m" | "f" | "d" | undefined) ?? undefined,
+          age_group: (ageGroup as typeof AGE_GROUPS[number] | undefined) ?? undefined,
+          has_children: hasChildren ?? undefined,
+          attack_motive: (attackMotive as typeof ATTACK_MOTIVES[number]["value"] | undefined) ?? undefined,
+        },
+      });
+      if (result.ok) {
+        toast.success("Prijava oddana. Hvala za vaš glas.");
+        setText("");
+        setCategory(null);
+        setPlatform(null);
+        setGender(null);
+        setAgeGroup(null);
+        setHasChildren(null);
+        setAttackMotive(null);
+        await queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+        await queryClient.invalidateQueries({ queryKey: ["analytics"] });
+        await queryClient.invalidateQueries({ queryKey: ["weekly-summary"] });
+        onSubmitted();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Napaka pri oddaji prijave.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (success) return <div className="rounded-xl border border-green-800 bg-green-950 p-8 text-center"><p className="text-lg font-medium text-green-400">Prijava oddana. Hvala za vaš glas.</p></div>;
-
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-      <h3 className="text-base font-semibold text-white">Prijavi primer</h3>
-      <p className="mb-4 mt-1 text-sm text-neutral-400">Vaša identiteta ni shranjena. Vnos se takoj anonimizira.</p>
-      <label className="mb-1 block text-sm font-medium text-white">Opis / citat žaljivke <span style={{ color: CAMPAIGN_RED }}>*</span></label>
-      <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Napišite kaj je bilo rečeno…" rows={4} maxLength={1000} className="mb-1 w-full resize-none rounded-lg border border-neutral-700 bg-neutral-950 p-3 text-sm text-white placeholder-neutral-600 focus:border-campaign-red focus:outline-none" />
-      <div className="mb-4 flex justify-end"><span className="text-xs text-neutral-500 tabular-nums">{text.length}/1000</span></div>
-      <label className="mb-2 block text-sm font-medium text-white">Kategorija <span style={{ color: CAMPAIGN_RED }}>*</span></label>
-      <div className="mb-4 grid gap-2 sm:grid-cols-3">
-        {CATEGORIES.map(cat => (
-          <button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-left transition-all" style={{ borderColor: category === cat.value ? cat.color : "#262626", backgroundColor: category === cat.value ? `${cat.color}15` : "transparent" }}>
-            <span className="grid h-7 w-7 place-items-center rounded" style={{ backgroundColor: `${cat.color}22`, color: cat.color }}><span className="text-xs font-bold">{cat.label[0]}</span></span>
-            <span className="text-sm font-medium text-white">{cat.label}</span>
-          </button>
-        ))}
+    <Card surface="solid" className="flex flex-col gap-5 p-4 md:p-6">
+      <div>
+        <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">
+          Prijavi primer
+        </Typography>
+        <Typography as="p" variant="body-sm-regular" color="secondary" className="mt-1">
+          Vaša identiteta ni shranjena. Vnos se takoj anonimizira.
+        </Typography>
       </div>
-      <label className="mb-2 block text-sm font-medium text-white">Platforma <span style={{ color: CAMPAIGN_RED }}>*</span></label>
-      <div className="mb-4 flex flex-wrap gap-2">{PLATFORMS.map(p => <button key={p} type="button" onClick={() => setPlatform(p)} className="cursor-pointer rounded-full border px-4 py-2 text-sm transition-all" style={{ borderColor: platform === p ? CAMPAIGN_RED : "#262626", backgroundColor: platform === p ? `${CAMPAIGN_RED}15` : "transparent", color: platform === p ? CAMPAIGN_RED : "#e5e5e5" }}>{p}</button>)}</div>
-      <details className="mb-4 rounded-lg border border-neutral-800">
-        <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-neutral-300 list-none">Neobvezni podatki za analitiko ozadja <span className="ml-auto text-xs text-neutral-500">anonimno</span></summary>
-        <div className="grid gap-4 border-t border-neutral-800 p-4 sm:grid-cols-2">
-          <div><label className="mb-2 block text-xs font-medium text-neutral-400">Spol</label><div className="flex flex-wrap gap-2">{GENDERS.map(g => <Chip key={g.value} active={gender === g.value} onClick={() => setGender(gender === g.value ? null : g.value)}>{g.label}</Chip>)}</div></div>
-          <div><label className="mb-2 block text-xs font-medium text-neutral-400">Starostna skupina</label><div className="flex flex-wrap gap-2">{AGE_GROUPS.map(a => <Chip key={a} active={ageGroup === a} onClick={() => setAgeGroup(ageGroup === a ? null : a)}>{a}</Chip>)}</div></div>
-          <div><label className="mb-2 block text-xs font-medium text-neutral-400">Ali imate otroke?</label><div className="flex flex-wrap gap-2"><Chip active={hasChildren === true} onClick={() => setHasChildren(hasChildren === true ? null : true)}>Da</Chip><Chip active={hasChildren === false} onClick={() => setHasChildren(hasChildren === false ? null : false)}>Ne</Chip></div></div>
-          <div className="sm:col-span-2"><label className="mb-2 block text-xs font-medium text-neutral-400">Zaradi čega ste bili napadeni?</label><div className="flex flex-wrap gap-2">{ATTACK_MOTIVES.map(m => <Chip key={m.value} active={attackMotive === m.value} onClick={() => setAttackMotive(attackMotive === m.value ? null : m.value)}>{m.label}</Chip>)}</div></div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-q-label-md-medium text-q-text-primary">
+          Opis / citat žaljivke <span style={{ color: CAMPAIGN_RED }}>*</span>
+        </label>
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Napišite kaj je bilo rečeno / napisano…"
+          rows={4}
+          maxLength={1000}
+        />
+        <div className="flex justify-end">
+          <span className="text-q-caption-sm-regular text-q-text-tertiary tabular-nums">{text.length}/1000</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-q-label-md-medium text-q-text-primary">
+          Kategorija <span style={{ color: CAMPAIGN_RED }}>*</span>
+        </label>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {CATEGORIES.map((cat) => {
+            const IconComp = CATEGORY_ICONS[cat.value] ?? ShieldAlert;
+            const active = category === cat.value;
+            return (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setCategory(cat.value)}
+                className="flex cursor-pointer items-center gap-2 rounded-q-400 border p-3 text-left transition-all"
+                style={{
+                  borderColor: active ? cat.color : "var(--hf-color-border-default)",
+                  backgroundColor: active ? `${cat.color}15` : "transparent",
+                }}
+              >
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-q-300" style={{ backgroundColor: `${cat.color}22`, color: cat.color }}>
+                  <Icon as={IconComp} size="sm" />
+                </span>
+                <span className="text-q-label-md-medium text-q-text-primary">{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-q-label-md-medium text-q-text-primary">
+          Platforma <span style={{ color: CAMPAIGN_RED }}>*</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {PLATFORMS.map((p) => {
+            const active = platform === p;
+            return (
+              <button key={p} type="button" onClick={() => setPlatform(p)}
+                className="cursor-pointer rounded-q-full border px-4 py-2 text-q-label-md-regular transition-all"
+                style={{
+                  borderColor: active ? CAMPAIGN_RED : "var(--hf-color-border-default)",
+                  backgroundColor: active ? `${CAMPAIGN_RED}15` : "transparent",
+                  color: active ? CAMPAIGN_RED : "var(--hf-color-text-primary)",
+                }}
+              >{p}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      <details className="rounded-q-400 border border-q-border-subtle">
+        <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-q-label-md-medium text-q-text-secondary list-none [&::-webkit-details-marker]:hidden">
+          <Icon as={Info} size="sm" />
+          Neobvezni podatki za analitiko ozadja
+          <span className="ml-auto text-q-caption-sm-regular text-q-text-tertiary">anonimno</span>
+        </summary>
+        <div className="flex flex-col gap-4 border-t border-q-border-subtle p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label className="text-q-label-sm-medium text-q-text-secondary">Spol</label>
+              <div className="flex flex-wrap gap-2">
+                {GENDERS.map((g) => (
+                  <Chip key={g.value} active={gender === g.value} onClick={() => setGender(gender === g.value ? null : g.value)}>{g.label}</Chip>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-q-label-sm-medium text-q-text-secondary">Starostna skupina</label>
+              <div className="flex flex-wrap gap-2">
+                {AGE_GROUPS.map((a) => (
+                  <Chip key={a} active={ageGroup === a} onClick={() => setAgeGroup(ageGroup === a ? null : a)}>{a}</Chip>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-q-label-sm-medium text-q-text-secondary">Ali imate otroke?</label>
+              <div className="flex flex-wrap gap-2">
+                <Chip active={hasChildren === true} onClick={() => setHasChildren(hasChildren === true ? null : true)}>Da</Chip>
+                <Chip active={hasChildren === false} onClick={() => setHasChildren(hasChildren === false ? null : false)}>Ne</Chip>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <label className="text-q-label-sm-medium text-q-text-secondary">Zaradi česa ste bili napadeni?</label>
+              <div className="flex flex-wrap gap-2">
+                {ATTACK_MOTIVES.map((m) => (
+                  <Chip key={m.value} active={attackMotive === m.value} onClick={() => setAttackMotive(attackMotive === m.value ? null : m.value)}>{m.label}</Chip>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-q-300 bg-q-background-tertiary px-3 py-2">
+            <Icon as={Lock} size="xs" className="text-q-text-tertiary" />
+            <Typography as="p" variant="caption-sm-regular" className="text-q-text-tertiary">
+              Izključno za agregatno statistično analizo. Nikoli povezano z identiteto.
+            </Typography>
+          </div>
         </div>
       </details>
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+
+      {error && (
+        <Typography as="p" variant="caption-sm-regular" color="danger" role="alert">{error}</Typography>
+      )}
+
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-neutral-500">🔒 Identiteta ni shranjena</span>
-        <button onClick={handleSubmit} disabled={!canSubmit} className="cursor-pointer rounded-lg px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: CAMPAIGN_RED }}>{submitting ? "Oddajam…" : "Oddaj prijavo"}</button>
+        <Typography as="p" variant="caption-sm-regular" className="text-q-text-tertiary">
+          <Icon as={Lock} size="xs" className="inline align-middle" /> Identiteta ni shranjena
+        </Typography>
+        <Button variant="primary" size="md" disabled={!canSubmit} onClick={handleSubmit}>
+          {submitting ? <Loader size="xs" color="neutral" /> : <>{submitting ? "Oddajam…" : "Oddaj prijavo"}<Icon as={Send} size="sm" /></>}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function Chip({ children, active, onClick }: { children: ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer rounded-q-full border px-3 py-1.5 text-q-label-sm-regular transition-all"
+      style={{
+        borderColor: active ? CAMPAIGN_RED : "var(--hf-color-border-default)",
+        backgroundColor: active ? `${CAMPAIGN_RED}15` : "transparent",
+        color: active ? CAMPAIGN_RED : "var(--hf-color-text-primary)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Category Legend ───
+
+function CategoryLegend() {
+  return (
+    <Card surface="solid" className="flex flex-col gap-4 p-4 md:p-6">
+      <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">Kategorije prijav</Typography>
+      <div className="flex flex-col gap-3">
+        {CATEGORIES.map((cat) => {
+          const IconComp = CATEGORY_ICONS[cat.value] ?? ShieldAlert;
+          return (
+            <div key={cat.value} className="flex gap-3 rounded-q-400 border border-q-border-subtle p-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-q-400" style={{ backgroundColor: `${cat.color}22`, color: cat.color }}>
+                <Icon as={IconComp} size="md" />
+              </span>
+              <div className="flex flex-col gap-1">
+                <span className="text-q-label-lg-medium" style={{ color: cat.color }}>{cat.label}</span>
+                <Typography as="p" variant="body-sm-regular" color="secondary">{cat.description}</Typography>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Analytics Panel ───
+
+function AnalyticsPanel() {
+  const { data, isPending, error } = useQuery({
+    queryKey: ["analytics"],
+    queryFn: () => getAnalytics(),
+  });
+
+  if (isPending) {
+    return <div className="flex items-center justify-center py-12"><Loader size="md" color="neutral" /></div>;
+  }
+  if (error || !data) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <Typography as="p" variant="body-sm-regular" color="danger">Napaka pri nalaganju analitike.</Typography>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card surface="solid" className="flex items-center gap-2 p-4">
+        <Icon as={Info} size="sm" className="text-q-text-tertiary" />
+        <Typography as="p" variant="body-sm-regular" color="secondary">
+          Skupno {data.totalWithDemographics} prijav z demografskimi podatki. Vsi podatki so agregirani in anonimni.
+        </Typography>
+      </Card>
+      <div className="grid gap-3 md:grid-cols-2">
+        <BreakdownCard title="Po spolu" data={data.gender} />
+        <BreakdownCard title="Po starostni skupini" data={data.ageGroup} />
+        <BreakdownCard title="Otroci" data={data.hasChildren} />
+        <BreakdownCard title="Motiv napada" data={data.attackMotive} />
       </div>
     </div>
   );
 }
 
-// ─── Category Legend ───
-function CategoryLegend() {
+function BreakdownCard({ title, data }: { title: string; data: { label: string; count: number; percentage: number }[] }) {
+  const max = Math.max(...data.map((d) => d.count), 1);
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:p-6">
-      <h3 className="mb-4 text-base font-semibold text-white">Kategorije prijav</h3>
-      <div className="flex flex-col gap-3">
-        {CATEGORIES.map(cat => (
-          <div key={cat.value} className="flex gap-3 rounded-lg border border-neutral-800 p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${cat.color}22`, color: cat.color }}><span className="text-sm font-bold">{cat.label[0]}</span></span>
-            <div className="flex flex-col gap-1"><span className="text-sm font-medium" style={{ color: cat.color }}>{cat.label}</span><p className="text-sm text-neutral-400">{cat.description}</p></div>
+    <Card surface="solid" className="flex flex-col gap-3 p-4">
+      <Typography as="h4" variant="title-sm-semi-bold" className="text-q-text-primary">{title}</Typography>
+      <div className="flex flex-col gap-2">
+        {data.map((d) => (
+          <div key={d.label} className="flex items-center gap-3">
+            <span className="w-28 shrink-0 text-q-body-sm-regular text-q-text-secondary">{d.label}</span>
+            <div className="h-5 flex-1 overflow-hidden rounded-q-200 bg-q-background-tertiary">
+              <div className="h-full rounded-q-200 transition-all duration-500" style={{ width: `${Math.max((d.count / max) * 100, 2)}%`, backgroundColor: CAMPAIGN_RED }} />
+            </div>
+            <span className="w-12 shrink-0 text-right text-q-body-sm-medium tabular-nums text-q-text-primary">{d.count}</span>
+            <span className="w-10 shrink-0 text-right text-q-caption-sm-regular text-q-text-tertiary tabular-nums">{d.percentage}%</span>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+// ─── Sign-in prompt ───
+
+function SignInPrompt() {
+  return (
+    <Card surface="solid" className="grid place-items-center p-8 text-center">
+      <div className="flex max-w-sm flex-col items-center gap-3">
+        <span className="grid h-12 w-12 place-items-center rounded-q-full" style={{ backgroundColor: `${CAMPAIGN_RED}22`, color: CAMPAIGN_RED }}>
+          <Icon as={LogIn} size="md" />
+        </span>
+        <Typography as="h3" variant="title-md-semi-bold" className="text-q-text-primary">Prijava potrebna</Typography>
+        <Typography as="p" variant="body-sm-regular" color="secondary">
+          Za ustvarjanje vizualnega povzetka se prijavite v Higgsfield.
+        </Typography>
+        <a
+          href="/__auth/login?return=/"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-q-500 px-5 py-2.5 text-q-label-md-medium text-white"
+          style={{ backgroundColor: CAMPAIGN_RED }}
+        >
+          <Icon as={LogIn} size="sm" /> Prijavi se
+        </a>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Main Layout ───
+
+export function AppDetailTemplate() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const isSignedIn = false;
+
+  const stats = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: () => getDashboardStats(),
+    refetchInterval: 30000, // refresh every 30s for "live" feel
+  });
+
+  const statsData = stats.data;
+
+  return (
+    <div className="min-h-dvh bg-q-background-primary">
+      
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+        {/* Header */}
+        <header className="flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-q-500" style={{ background: `linear-gradient(135deg, ${CAMPAIGN_RED}, ${CAMPAIGN_RED_DARK})` }}>
+            <Icon as={Megaphone} size="md" className="text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-q-headline-sm-semi-bold text-q-text-primary">#GlasŽrtev</h1>
+            <p className="text-q-body-sm-regular text-q-text-secondary truncate">Števec sovražnega govora v Sloveniji</p>
+          </div>
+        </header>
+
+        {/* Tabs */}
+        <div
+          variant="segmented"
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(String(v))}
+          className="flex! min-h-0 w-full flex-col gap-5"
+        >
+          <Tabs.List
+            className="self-start"
+            items={[
+              { value: "dashboard", label: "Nadzorna plošča", start: <Icon size="sm" as={BarChart3} /> },
+              { value: "submit", label: "Prijavi", start: <Icon size="sm" as={Send} /> },
+              { value: "categories", label: "Kategorije", start: <Icon size="sm" as={Info} /> },
+              { value: "analytics", label: "Analitika", start: <Icon size="sm" as={BarChart3} /> },
+              { value: "visual", label: "Vizualni povzetki", start: <Icon size="sm" as={Megaphone} /> },
+            ]}
+          />
+
+          {/* ─── Dashboard Tab ─── */}
+          <div value="dashboard" className="flex flex-col gap-4 pt-0">
+            {/* Hero — daily counter from 0 */}
+            <Hero stats={statsData} isPending={stats.isPending} />
+
+            {/* Pyramid */}
+            {statsData && <CategoryPyramid categories={statsData.categories} />}
+
+            {/* Charts row */}
+            {statsData && (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <StackedAreaChart monthly={statsData.monthly} />
+                <HeatmapChart heatmap={statsData.heatmap} />
+              </div>
+            )}
+
+            {/* Platform breakdown */}
+            {statsData && statsData.platforms.length > 0 && (
+              <PlatformBreakdown platforms={statsData.platforms} />
+            )}
+
+            {/* Voices feed */}
+            {statsData && <VoicesFeed reports={statsData.recentReports} />}
+
+            {/* Words that hurt */}
+            {statsData && statsData.words.length > 0 && (
+              <WordsThatHurt words={statsData.words} />
+            )}
+
+            {/* Weekly card */}
+            <WeeklyCard />
+          </div>
+
+          {/* ─── Submit Tab ─── */}
+          <div value="submit" className="pt-0">
+            <ReportForm onSubmitted={() => setActiveTab("dashboard")} />
+          </div>
+
+          {/* ─── Categories Tab ─── */}
+          <div value="categories" className="pt-0">
+            <CategoryLegend />
+          </div>
+
+          {/* ─── Analytics Tab ─── */}
+          <div value="analytics" className="pt-0">
+            <AnalyticsPanel />
+          </div>
+
+          {/* ─── Visual Tab ─── */}
+                  </div>
+
+        {/* Footer */}
+        <footer className="flex items-center justify-center gap-2 py-6 text-center">
+          <Icon as={Lock} size="xs" className="text-q-text-tertiary" />
+          <Typography as="p" variant="caption-sm-regular" className="text-q-text-tertiary">
+            #GlasŽrtev — anonimiziran števec sovražnega govora. Imena in osebni podatki niso objavljeni.
+          </Typography>
+        </footer>
       </div>
     </div>
   );
